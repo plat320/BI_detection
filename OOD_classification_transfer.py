@@ -151,7 +151,6 @@ def train():
 
     ##### model, optimizer config
     model = model_config(args.net_type, args.num_classes, args.OOD_num_classes, args.with_thermal)
-    print(model)
 
     batch_num = len(train_loader) / args.batch_size if args.custom_sampler else len(train_loader)
 
