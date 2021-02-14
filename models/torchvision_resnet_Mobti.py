@@ -128,8 +128,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-
-    def __init__(self, block, layers, num_classes=1000, other_num_classes=0, zero_init_residual=False,
+    def __init__(self, block, layers, thermal, num_classes=1000, other_num_classes=0, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None):
         super(ResNet, self).__init__()
@@ -149,10 +148,14 @@ class ResNet(nn.Module):
                              "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
         self.groups = groups
         self.base_width = width_per_group
-        self.my_conv1 = nn.Conv2d(4, self.inplanes, kernel_size=7, stride=2, padding=3,
+
+        if thermal:
+            self.my_conv1 = nn.Conv2d(4, self.inplanes, kernel_size=7, stride=2, padding=3,
+                                   bias=False)
+        else:
+            self.my_conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
                                bias=False)
-        # self.my_conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-        #                        bias=False)
+
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
@@ -347,8 +350,8 @@ class ResNet(nn.Module):
 
 
 
-def _resnet(arch, block, layers, num_c, pretrained, progress, num_cc=0, **kwargs):
-    model = ResNet(block, layers, num_classes = num_c, other_num_classes=num_cc, **kwargs)
+def _resnet(arch, block, layers, num_c, thermal, pretrained, progress, num_cc=0, **kwargs):
+    model = ResNet(block, layers, thermal=thermal, num_classes = num_c, other_num_classes=num_cc, **kwargs)
     model.apply(weight_init)
 
     if pretrained:
@@ -362,47 +365,47 @@ def _resnet(arch, block, layers, num_c, pretrained, progress, num_cc=0, **kwargs
     return model
 
 
-def resnet18(num_c, pretrained=False, progress=True, **kwargs):
+def resnet18(num_c, num_cc=0, thermal=False, pretrained=False, progress=True, **kwargs):
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], num_c, pretrained, progress,
+    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], num_c, thermal, pretrained, progress, num_cc,
                    **kwargs)
 
 
-def resnet34(num_c, num_cc=0, pretrained=False, progress=True, **kwargs):
+def resnet34(num_c, num_cc=0, thermal=False, pretrained=False, progress=True, **kwargs):
     r"""ResNet-34 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], num_c, pretrained, progress, num_cc,
+    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], num_c, thermal, pretrained, progress, num_cc,
                    **kwargs)
 
 
-def resnet50(num_c, num_cc=0, pretrained=False, progress=True, **kwargs):
+def resnet50(num_c, num_cc=0, thermal=False, pretrained=False, progress=True, **kwargs):
     r"""ResNet-50 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], num_c, pretrained, progress, num_cc,
+    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], num_c, thermal, pretrained, progress, num_cc,
                    **kwargs)
 
 
-def resnet101(num_c, pretrained=False, progress=True, **kwargs):
+def resnet101(num_c, num_cc=0, thermal=False, pretrained=False, progress=True, **kwargs):
     r"""ResNet-101 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], num_c, pretrained, progress,
+    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], num_c, thermal, pretrained, progress, num_cc,
                    **kwargs)
 
 

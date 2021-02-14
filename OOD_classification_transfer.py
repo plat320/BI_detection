@@ -1,15 +1,13 @@
 import os
 import argparse
 
-### python OOD_classification_transfer.py -d mobticon --gpu 3 --batch_size 16 --net_type resnet34 --where server2 -l 5e-3 --num_classes 4 --same_class 4 5 --soft_label --board_clear --not_test_ODIN
-
+#### python OOD_classification_transfer.py -d mobticon --train --num_classes 5 --not_test_ODIN --soft_label --custom_sampler --num_instances 4 --gpu 0 -e 30 -b 32 -m resnet50 --where server2 -l 5e-3 --board_clear
 
 parser = argparse.ArgumentParser(description='Classifier training')
 parser.add_argument('-b', '--batch_size', type=int, default=4, metavar='N', help='batch size for data loader')
-parser.add_argument('--num_epochs', type=int, default=100, metavar='N', help='# of training epoch')
-parser.add_argument('--num_instances', type=int, default=2, metavar='N', help='# of minimum instances')
+parser.add_argument('-e', '--num_epochs', type=int, default=100, metavar='N', help='# of training epoch')
 parser.add_argument('-l', '--init_lr', type=float, default=1e-5, metavar='N', help='initial learning rate')
-parser.add_argument('-d', '--dataset', type=str, default="top5", metavar='N', help='animal | top5 | group2 | caltech | dog | cifar10 | cifar100 | mobticon')
+parser.add_argument('-d', '--dataset', type=str, default="mobticon", metavar='N', help='mobticon')
 parser.add_argument('--num_classes', type=int, default=4, help='the # of classes')
 parser.add_argument('--OOD_num_classes', type=int, default=0, help='the # of OOD classes, if do not want training transfer, this value must be 0')
 parser.add_argument('-m','--net_type', type=str, required=True, help='resnet34 | resnet50 | vgg16 | vgg16_bn | vgg19 | vgg19_bn')
@@ -21,16 +19,17 @@ parser.add_argument('--except_class', type=str, nargs="+", default=[], help='exc
 parser.add_argument('--OOD_class', type=str, nargs="+", default=[], help='OOD classes\' number')
 parser.add_argument('--resume', default=False, action="store_true", help='load last checkpoint')
 parser.add_argument('--board_clear', default=False, action="store_true", help='clear tensorboard folder')
-parser.add_argument('--nesterov', default=False, action="store_true", help='optimizer option nesterov')
+parser.add_argument('--with_thermal', default=False, action="store_true", help='use thermal images')
 parser.add_argument('--metric', default=False, action="store_true", help='triplet loss enable')
 parser.add_argument('--membership', default=False, action="store_true", help='membership loss enable')
 parser.add_argument('--custom_sampler', default=False, action="store_true", help='use custom sampler')
+parser.add_argument('--num_instances', type=int, default=2, metavar='N', help='# of minimum instances')
 parser.add_argument('--transfer', default=False, action="store_true", help='transfer method enable')
 parser.add_argument('--soft_label', default=False, action="store_true", help='soft label enable')
 parser.add_argument('--not_test_ODIN', default=True, action="store_false", help='if do not want test ODIN, check this option')
 parser.add_argument('--train', default=False, action="store_true", help='Train models')
 parser.add_argument('--test', default=False, action="store_true", help='Test models')
-parser.add_argument('--model_path', type=str, help='trained model path')
+parser.add_argument('--model_path', type=str, help='**test mode only** trained model path')
 args = parser.parse_args()
 print(args)
 
@@ -77,11 +76,11 @@ def testing():
     class_info = [args.same_class, args.except_class, args.OOD_class]
     _, _, test_dataset, test_loader, _, _, _, _ = mobticon_crop_data_config(
         image_dir, OOD_dir, json_dir, class_info, args.batch_size,
-        args.num_instances, args.soft_label, args.custom_sampler, args.not_test_ODIN, args.transfer, resize)
+        args.num_instances, args.soft_label, args.custom_sampler, args.not_test_ODIN, args.transfer, args.with_thermal, resize)
 
 
     ##### model, optimizer config
-    model = model_config(args.net_type, args.num_classes, args.OOD_num_classes)
+    model = model_config(args.net_type, args.num_classes, args.OOD_num_classes, args.with_thermal)
 
 
     print("load checkpoint")
@@ -144,18 +143,19 @@ def train():
     class_info = [args.same_class, args.except_class, args.OOD_class]
     train_dataset, train_loader, test_dataset, test_loader, out_test_dataset, out_test_loader, OOD_dataset, OOD_loader = mobticon_crop_data_config(
         image_dir, OOD_dir, json_dir, class_info, args.batch_size,
-        args.num_instances, args.soft_label, args.custom_sampler, args.not_test_ODIN, args.transfer, resize)
+        args.num_instances, args.soft_label, args.custom_sampler, args.not_test_ODIN, args.transfer, args.with_thermal, resize)
 
 
 
 
 
     ##### model, optimizer config
-    model = model_config(args.net_type, args.num_classes, args.OOD_num_classes)
+    model = model_config(args.net_type, args.num_classes, args.OOD_num_classes, args.with_thermal)
+    print(model)
 
     batch_num = len(train_loader) / args.batch_size if args.custom_sampler else len(train_loader)
 
-    optimizer = optim.SGD(model.parameters(), lr=args.init_lr, momentum=0.9, nesterov=args.nesterov)
+    optimizer = optim.SGD(model.parameters(), lr=args.init_lr, momentum=0.9)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
                                                            args.num_epochs * batch_num,
                                                            eta_min=args.init_lr/10)
@@ -272,10 +272,7 @@ def train():
             # print("{:.4f}%".format(train_label[label] / train_dataset.num_per_class[train_dataset.class_list[label]] * 100), end=" ")
         print()
 
-        if args.dataset == 'caltech' or args.dataset == 'dog' or args.dataset == 'mobticon':
-            print("train accuracy total : {:.4f}".format(train_acc/train_dataset.num_image))
-        else:
-            print("train accuracy total : {:.4f}".format(train_acc/(batch_num*args.batch_size)))
+        print("train accuracy total : {:.4f}".format(train_acc/sum(num_train_label)))
         print("test accuracy total : {:.4f}".format(test_acc/test_dataset.num_image))
         #### class-wise test accuracy
         for label in range(args.num_classes):
@@ -314,7 +311,3 @@ if __name__ == '__main__':
         train()
     elif args.test:
         testing()
-
-
-# python OOD_classification_transfer.py -d group2 --num_classes 4 --OOD_num_classes 200 --gpu 2 --batch_size 32 --net_type vgg19 --where server2 -l 5e-3 --membership --transfer
-# python OOD_classification_transfer.py -d mobticon --num_classes 3 --gpu 3 --batch_size 32 --net_type resnet50 --where server2 -l 5e-3

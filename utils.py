@@ -50,15 +50,15 @@ def tensorboard_idx(tensorboard_dir):
             Path(os.path.join(tensorboard_dir, str(i))).mkdir(exist_ok=True, parents=True)
             return i
 
-def model_config(net_type, num_classes, OOD_num_classes):
+def model_config(net_type, num_classes, OOD_num_classes, thermal):
     if net_type == "resnet50":
-        model = models.resnet50(num_c=num_classes, num_cc=OOD_num_classes, pretrained=True)
+        model = models.resnet50(num_c=num_classes, num_cc=OOD_num_classes, thermal=thermal, pretrained=True)
     elif net_type == "resnet34":
-        model = models.resnet34(num_c=num_classes, num_cc=OOD_num_classes, pretrained=True)
+        model = models.resnet34(num_c=num_classes, num_cc=OOD_num_classes, thermal=thermal, pretrained=True)
     elif net_type == "resnet18":
-        model = models.resnet18(num_c=num_classes, num_cc=OOD_num_classes, pretrained=True)
+        model = models.resnet18(num_c=num_classes, num_cc=OOD_num_classes, thermal=thermal, pretrained=True)
     elif net_type == "resnet101":
-        model = models.resnet101(num_c=num_classes, num_cc=OOD_num_classes, pretrained=True)
+        model = models.resnet101(num_c=num_classes, num_cc=OOD_num_classes, thermal=thermal, pretrained=True)
     elif net_type == "vgg19":
         model = models.vgg19(num_c=num_classes, num_cc=OOD_num_classes, pretrained=True)
     elif net_type == "vgg16":
@@ -290,13 +290,14 @@ def mobticon_data_config(image_dir, OOD_dir, json_dir, class_info, batch_size,
 
 
 def mobticon_crop_data_config(image_dir, OOD_dir, json_dir, class_info, batch_size,
-                num_instances, soft_label, custom_sampler, not_test_ODIN, transfer, resize=(512,380)):
+                num_instances, soft_label, custom_sampler, not_test_ODIN, transfer, thermal=False, resize=(512,380)):
     train_dataset = load_data.Mobticon_crop_dataloader(image_dir = image_dir,
-                                                  json_dir = json_dir,
-                                                  mode = "train",
-                                                  class_info = class_info,
-                                                  resize = resize,
-                                                  soft_label = soft_label)
+                                                       json_dir = json_dir,
+                                                       mode = "train",
+                                                       class_info = class_info,
+                                                       thermal=thermal,
+                                                       resize = resize,
+                                                       soft_label = soft_label)
     if custom_sampler:
         MySampler = load_data.customSampler(train_dataset, batch_size, num_instances)
         train_loader = DataLoader(train_dataset,
@@ -313,6 +314,7 @@ def mobticon_crop_data_config(image_dir, OOD_dir, json_dir, class_info, batch_si
     test_dataset = load_data.Mobticon_crop_dataloader(image_dir = image_dir,
                                                   json_dir = json_dir,
                                                   class_info = class_info,
+                                                       thermal=thermal,
                                                  mode = "test",
                                                  resize = resize)
     test_loader = DataLoader(test_dataset,
@@ -327,6 +329,7 @@ def mobticon_crop_data_config(image_dir, OOD_dir, json_dir, class_info, batch_si
                                                          json_dir = json_dir,
                                                          mode = "OOD",
                                                          class_info = class_info,
+                                                       thermal=thermal,
                                                          resize=resize)
         out_test_loader = DataLoader(out_test_dataset,
                                                   batch_size=8,

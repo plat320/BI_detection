@@ -29,15 +29,34 @@ def str_mapping(path, str=".bmp", str2=".png"):
 
     return list(file_list_final)
 
-
-def append_value(dict_obj, key, value):
+def append_dict(dict_obj, key, value):
     # Check if key exist in dict or not
     if key in dict_obj:
         # Key exist in dict.
         # Check if type of value of key is list or not
+        # if not isinstance(dict_obj[key], list):
+        #     # If type is not list then make it list
+        #     dict_obj[key] = [dict_obj[key]]
+        # Append the value in list
+        for val_key, val_val in value.items():
+            append_value(dict_obj[key], val_key, val_val)
+            # dict_obj[key].append_value(value)
+    else:
+        # As key is not in dict,
+        # so, add key-value pair
+        dict_obj[key] = value
+
+def append_value(dict_obj, key, value):         #### type list
+    # Check if key exist in dict or not
+    if key in dict_obj:
+        # Key exist in dict.
+        # Check if type of value of key is list or not
+
+
         if not isinstance(dict_obj[key], list):
             # If type is not list then make it list
             dict_obj[key] = [dict_obj[key]]
+
         # Append the value in list
         if isinstance(value, list):
             dict_obj[key].extend(value)
@@ -51,7 +70,8 @@ def append_value(dict_obj, key, value):
 
 
 class Mobticon_crop_dataloader(Dataset):
-    def __init__(self, image_dir, json_dir, mode, class_info, resize=(512,380), soft_label = False, repeat=1):
+    def __init__(self, image_dir, json_dir, mode, class_info, thermal=False, resize=(512,380), soft_label = False, repeat=1):
+        self.thermal = thermal
         #### json config
         with open(json_dir) as json_file:
             json_data = json.load(json_file)
@@ -69,9 +89,9 @@ class Mobticon_crop_dataloader(Dataset):
                 first_idx = class_idx
                 continue
             tmp_list = json_data["TRAIN"].pop(class_idx)
-            append_value(json_data["TRAIN"], first_idx, tmp_list)
+            append_dict(json_data["TRAIN"], first_idx, tmp_list)
             tmp_list = json_data["TEST"].pop(class_idx)
-            append_value(json_data["TEST"], first_idx, tmp_list)
+            append_dict(json_data["TEST"], first_idx, tmp_list)
 
 
         if mode == "train" or mode == "test":
@@ -164,9 +184,6 @@ class Mobticon_crop_dataloader(Dataset):
         image = Image.open(self.image_list[idx])
         image = self.transform_dict["vis_norm"](self.transform_dict["init"](image))
 
-        thermal = Image.open(self.thermal_list[idx])
-        thermal = self.transform_dict["fir_norm"](self.transform_dict["init"](thermal))
-
         gt = [0]*len(self.class_list)
 
         gt[self.class_list.index(self.gt[idx])] = 1
@@ -178,12 +195,15 @@ class Mobticon_crop_dataloader(Dataset):
             gt[self.class_list.index(self.gt[idx])] = 1
 
 
+        if self.thermal:
+            thermal = Image.open(self.thermal_list[idx])
+            thermal = self.transform_dict["fir_norm"](self.transform_dict["init"](thermal))
 
-
-        # return {'input' : image,
-        return {'input' : torch.cat((thermal, image), dim=0),
-                'label' : torch.tensor(gt)}
-
+            return {'input' : torch.cat((thermal, image), dim=0),
+                    'label' : torch.tensor(gt)}
+        else:
+            return {'input' : image,
+                    'label': torch.tensor(gt)}
 
 class Mobticon_dataloader(Dataset):
     def __init__(self, image_dir, json_dir, mode, class_info, resize=(512,380), soft_label = False, repeat=1):
