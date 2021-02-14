@@ -13,7 +13,6 @@ parser.add_argument('--OOD_num_classes', type=int, default=0, help='the # of OOD
 parser.add_argument('-m','--net_type', type=str, required=True, help='resnet34 | resnet50 | vgg16 | vgg16_bn | vgg19 | vgg19_bn')
 parser.add_argument('--where', type=str, default="local", help='which machine')
 parser.add_argument('--gpu', type=str, default=0, help='gpu index')
-parser.add_argument('--mode', type=str, default="train", help='train | test')
 parser.add_argument('--same_class', type=str, nargs="+", default=[], help='same classes\' number')
 parser.add_argument('--except_class', type=str, nargs="+", default=[], help='except classes\' number')
 parser.add_argument('--OOD_class', type=str, nargs="+", default=[], help='OOD classes\' number')
@@ -156,7 +155,7 @@ def train():
 
     optimizer = optim.SGD(model.parameters(), lr=args.init_lr, momentum=0.9)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
-                                                           args.num_epochs * batch_num,
+                                                           args.num_epochs,
                                                            eta_min=args.init_lr/10)
 
 
@@ -225,7 +224,6 @@ def train():
             total_backward_loss = class_loss + triplet_loss + membership_loss + transfer_loss
             total_backward_loss.backward()
             optimizer.step()
-            scheduler.step()
 
 
             #### calc accuracy and running loss update
@@ -277,6 +275,7 @@ def train():
         for label in range(args.num_classes):
             print("label{}".format(label), end=" ")
             print("{:.4f}%".format(test_label[label] / test_dataset.num_per_class[test_dataset.class_list[label]] * 100), end=" ")
+            summary.add_scalar('test_acc/label{}'.format(label), test_label[label] / test_dataset.num_per_class[test_dataset.class_list[label]] * 100, epoch)
         print()
         print()
 
@@ -302,6 +301,7 @@ def train():
             'epoch': epoch,
             'init_lr' : scheduler.get_last_lr()[0]
             }, os.path.join(save_model, env, args.net_type, 'checkpoint_last.pth.tar'))
+
         scheduler.step()
 
 
