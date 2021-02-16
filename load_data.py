@@ -106,7 +106,8 @@ class Mobticon_crop_dataloader(Dataset):
         elif mode == "OOD":
             for class_idx in class_info[2]:
                 tmp_list = json_data["TRAIN"][class_idx]
-                tmp_list.extend(json_data["TEST"][class_idx])
+                # tmp_list.extend(json_data["TEST"][class_idx])
+                append_dict(json_data["TEST"], class_idx, tmp_list)
                 json_data=dict()
                 json_data[class_idx] = tmp_list
 
