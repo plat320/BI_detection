@@ -40,6 +40,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = env
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
+import load_data
 import time
 from tensorboardX import SummaryWriter
 from pathlib import Path
@@ -71,11 +73,19 @@ def testing():
     eps = 1e-8
 
     ### data config
-    resize = (300,200)
+    resize = (600,400)
     class_info = [args.same_class, args.except_class, args.OOD_class]
-    _, _, test_dataset, test_loader, _, _, _, _ = mobticon_crop_data_config(
-        image_dir, OOD_dir, json_dir, class_info, args.batch_size,
-        args.num_instances, args.soft_label, args.custom_sampler, args.not_test_ODIN, args.transfer, args.with_thermal, resize)
+    # _, _, test_dataset, test_loader, _, _, _, _ = mobticon_crop_data_config(
+    #     image_dir, OOD_dir, json_dir, class_info, args.batch_size,
+    #     args.num_instances, args.soft_label, args.custom_sampler, args.not_test_ODIN, args.transfer, args.with_thermal, resize)
+    test_dataset = load_data.Dog_dataloader(image_dir = image_dir,
+                                            num_class = args.num_classes,
+                                            mode = "test",
+                                            resize = resize)
+    test_loader = DataLoader(test_dataset,
+                                              batch_size=8,
+                                              shuffle=False,
+                                              num_workers=4)
 
 
     ##### model, optimizer config

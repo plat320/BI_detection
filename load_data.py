@@ -2,6 +2,7 @@ import os
 import random
 import copy
 import json
+import cv2
 import torch
 import numpy as np
 import torchvision.transforms.functional as TF
@@ -193,12 +194,9 @@ class Mobticon_crop_dataloader(Dataset):
         if self.mode == "train":
             #### for same augmentation
             rand_val = random.random()
-            # i, j, h, w = transforms.RandomCrop.get_params(image, output_size=self.resize)
-            angle, translations, scale, shear = transforms.RandomAffine(90).get_params([-45, 45], [1, 1], [1.2, 1.2], [1,1], img_size=self.resize)
+            angle, translations, scale, shear = transforms.RandomAffine(30).get_params([-15, 15], [0, 0], [1, 1], [0, 0], img_size=self.resize)
 
             #### visual augmentation
-            # image = TF.pad(image, [10, 10])
-            # image = TF.crop(image, i, j, h, w)
             image = TF.affine(image, angle, list(translations), scale, list(shear))
             if rand_val > 0.5:
                 image = TF.hflip(image)
@@ -222,8 +220,6 @@ class Mobticon_crop_dataloader(Dataset):
             #### augmentation
             if self.mode == "train":
                 #### thermal augmentation
-                # thermal = TF.pad(image, [10, 10])
-                # thermal = TF.crop(thermal, i, j, h, w)
                 thermal = TF.affine(thermal, angle, list(translations), scale, list(shear))
                 if rand_val > 0.5:
                     thermal = TF.hflip(thermal)
