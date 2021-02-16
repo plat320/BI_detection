@@ -4,6 +4,7 @@ import copy
 import json
 import torch
 import numpy as np
+import torchvision.transforms.functional as TF
 from pathlib import Path
 from PIL import Image, ImageOps
 from torchvision import transforms
@@ -72,6 +73,8 @@ def append_value(dict_obj, key, value):         #### type list
 class Mobticon_crop_dataloader(Dataset):
     def __init__(self, image_dir, json_dir, mode, class_info, thermal=False, resize=(512,380), soft_label = False, repeat=1):
         self.thermal = thermal
+        self.resize = resize
+        self.mode = mode
         #### json config
         with open(json_dir) as json_file:
             json_data = json.load(json_file)
@@ -164,7 +167,7 @@ class Mobticon_crop_dataloader(Dataset):
             ]),
             "init": transforms.Compose([
                 transforms.ToTensor(),
-                transforms.Resize(resize),
+                transforms.Resize(self.resize)
             ]),
             "vis_norm": transforms.Compose([
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
@@ -179,11 +182,28 @@ class Mobticon_crop_dataloader(Dataset):
     def __len__(self):
         return len(self.image_list) * self.repeat
 
+
     def __getitem__(self, idx):
         idx = idx % self.num_image
+
+        #### image config
         image = Image.open(self.image_list[idx])
         image = self.transform_dict["vis_norm"](self.transform_dict["init"](image))
 
+        if self.mode == "train":
+            #### for same augmentation
+            rand_val = random.random()
+            # i, j, h, w = transforms.RandomCrop.get_params(image, output_size=self.resize)
+            angle, translations, scale, shear = transforms.RandomAffine(90).get_params([-45, 45], [1, 1], [1.2, 1.2], [1,1], img_size=self.resize)
+
+            #### visual augmentation
+            # image = TF.pad(image, [10, 10])
+            # image = TF.crop(image, i, j, h, w)
+            image = TF.affine(image, angle, list(translations), scale, list(shear))
+            if rand_val > 0.5:
+                image = TF.hflip(image)
+
+        #### gt config
         gt = [0]*len(self.class_list)
 
         gt[self.class_list.index(self.gt[idx])] = 1
@@ -194,10 +214,21 @@ class Mobticon_crop_dataloader(Dataset):
             gt = [0] * len(self.class_list)
             gt[self.class_list.index(self.gt[idx])] = 1
 
-
+        #### get thermal image
         if self.thermal:
             thermal = Image.open(self.thermal_list[idx])
             thermal = self.transform_dict["fir_norm"](self.transform_dict["init"](thermal))
+
+            #### augmentation
+            if self.mode == "train":
+                #### thermal augmentation
+                # thermal = TF.pad(image, [10, 10])
+                # thermal = TF.crop(thermal, i, j, h, w)
+                thermal = TF.affine(thermal, angle, list(translations), scale, list(shear))
+                if rand_val > 0.5:
+                    thermal = TF.hflip(thermal)
+                thermal = thermal[0].unsqueeze(0)
+
 
             return {'input' : torch.cat((thermal, image), dim=0),
                     'label' : torch.tensor(gt)}

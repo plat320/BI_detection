@@ -138,7 +138,7 @@ def train():
     eps = 1e-8
 
     ### data config
-    resize = (512,380)
+    resize = (600,400)
     class_info = [args.same_class, args.except_class, args.OOD_class]
     train_dataset, train_loader, test_dataset, test_loader, out_test_dataset, out_test_loader, OOD_dataset, OOD_loader = mobticon_crop_data_config(
         image_dir, OOD_dir, json_dir, class_info, args.batch_size,
