@@ -78,12 +78,15 @@ def testing():
     # _, _, test_dataset, test_loader, _, _, _, _ = mobticon_crop_data_config(
     #     image_dir, OOD_dir, json_dir, class_info, args.batch_size,
     #     args.num_instances, args.soft_label, args.custom_sampler, args.not_test_ODIN, args.transfer, args.with_thermal, resize)
-    test_dataset = load_data.Dog_dataloader(image_dir = image_dir,
-                                            num_class = args.num_classes,
-                                            mode = "test",
-                                            resize = resize)
+
+    test_dataset = load_data.Mobticon_crop_dataloader(image_dir = image_dir,
+                                                  json_dir = json_dir,
+                                                  class_info = class_info,
+                                                       thermal=args.with_thermal,
+                                                 mode = "test",
+                                                 resize = resize)
     test_loader = DataLoader(test_dataset,
-                                              batch_size=8,
+                                              batch_size=1,
                                               shuffle=False,
                                               num_workers=4)
 
