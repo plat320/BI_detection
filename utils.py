@@ -18,8 +18,8 @@ def test(model, test_loader, num_classes, device):
 
     #### test
     for i, test_data in enumerate(test_loader):
-        if test_data['label'].argmax(dim=1) == 0:
-            continue
+        # if test_data['label'].argmax(dim=1)[0] == 0:
+        #     continue
         org_image = test_data['input'].to(device)
         gt = test_data['label'].type(torch.FloatTensor).to(device)
         model = model.to(device).eval()
@@ -98,8 +98,7 @@ def image_dir_config(where, dataset):
             # json_dir = "/home/seonghun20/code/Mobticon/Mobticon_objective/refer/Annotation_ver3.json"
             image_dir = "/mnt/hdd1/mmi_tr1_hdd1/seonghun20/Mobticon/Mobticon_dataset_ver4_reg_stat_crop_300x200_overlap_finished"
             # json_dir = "/home/seonghun20/code/Mobticon/Mobticon_objective/refer/Annotation_ver4_BI.json"
-            json_dir = "/home/seonghun20/code/Mobticon/Mobticon_objective/refer/Annotation_ver4_BI.json"
-            # json_dir = "/home/seonghun20/code/Mobticon/Mobticon_objective/refer/Annotation_ver4_crop.json"
+            json_dir = "/home/seonghun20/code/Mobticon/Mobticon_objective/refer/Annotation_ver4_wo_BI_ver2.json"
 
         elif dataset == "tmp":
             # image_dir = "/mnt/nas55/Personal/20seonghun/dataset/Mobticon_tmp/ICE_ANOMALY_dataset"
