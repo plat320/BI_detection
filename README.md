@@ -27,14 +27,14 @@ parser.add_argument('--test', default=False, action="store_true", help='Test mod
 parser.add_argument('--model_path', type=str, help='**test mode only** trained model path')  
 
 -d mobticon --train --num_classes 5 --not_test_ODIN --soft_label --custom_sampler --num_instances 2 --gpu 2 -e 30 -b 16 -m resnet50 --where server2 -l 5e-3 --with_thermal  
--dataset 데이터셋 선택(현재는 mobticon만 가능)  
+-dataset 데이터셋 선택  
 -train training or testing 선택  
 -same_class 같은 class로 간주 (ex- 4, 5번 class를 하나의 class로 보고싶다면 --same_class 4 5)  
 -except_class class에서 제외  
 -OOD_class Abnormal class
 -num_classes 5 class이지만 --same_class 또는 --except_class를 사용한다면 이에 맞춰서 class 개수 지정  
---net_type(-m) resnet계열 사용
---board_clear tensorboard 모두 제거  
+--net_type(-m) resnet계열 사용  
+--board_clear tensorboard 모두 제거   
 --with_thermal thermal image와 visual image를 concatenate하여 사용  
 --custom_sampler data imbalance를 해결하기 위해 사용  
 --num_instances batch에 한 class의 instance가 최소 --num_instances만큼 포함(코딩 실수로 batchsize/8로 설정)  
