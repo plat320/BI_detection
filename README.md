@@ -31,9 +31,9 @@ parser.add_argument('--model_path', type=str, help='**test mode only** trained m
 -train training or testing 선택  
 -same_class 같은 class로 간주 (ex- 4, 5번 class를 하나의 class로 보고싶다면 --same_class 4 5)  
 -except_class class에서 제외  
--OOD_class 사용 x  
+-OOD_class Abnormal class
 -num_classes 5 class이지만 --same_class 또는 --except_class를 사용한다면 이에 맞춰서 class 개수 지정  
---net_type(-m) resnet계열 사용해주시면 됩니다  
+--net_type(-m) resnet계열 사용
 --board_clear tensorboard 모두 제거  
 --with_thermal thermal image와 visual image를 concatenate하여 사용  
 --custom_sampler data imbalance를 해결하기 위해 사용  
